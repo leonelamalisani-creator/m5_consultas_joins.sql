@@ -2,8 +2,8 @@
 
 USE Ventas_Tech_DB;
 
---------------------------------------------------------------------------------
--- CONSULTA 1 - VISTA BASE DEL PROYECTO |INNER JOIN entre ventas, clientes, productos y categorías.
+--------------------------------------------------------------------------------------------------------------------
+-- CONSULTA 1 - VISTA BASE DEL PROYECTO | INNER JOIN entre ventas, clientes, productos y categorías.
 
 SELECT
     ventas.fecha_venta AS fecha,
@@ -24,11 +24,8 @@ INNER JOIN categorias
     ON productos.id_categoria = categorias.id_categoria
 ORDER BY ventas.fecha_venta;
 
-
---------------------------------------------------------------------------------
--- CONSULTA 2 - CLIENTES SIN VENTAS
--- Identifica los clientes que están registrados pero nunca realizaron
--- una compra.
+--------------------------------------------------------------------------------------------------------------------
+-- CONSULTA 2 - CLIENTES SIN VENTAS | Identifica los clientes que están registrados pero nunca realizaron una compra.
 
 SELECT
     clientes.nombre,
@@ -38,8 +35,7 @@ FROM clientes
 LEFT JOIN ventas
     ON clientes.id_cliente = ventas.id_cliente
 WHERE ventas.id_venta IS NULL;
-
---------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------
 -- CONSULTA 3 - PRODUCTOS SIN VENTAS | Identifica los productos del catálogo que no tienen ninguna venta.
 
 SELECT
@@ -53,7 +49,7 @@ INNER JOIN categorias
     ON productos.id_categoria = categorias.id_categoria
 WHERE ventas.id_venta IS NULL;
 
---------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------
 -- CONSULTA 4 - CONSOLIDADO POR CANAL | La base no posee una columna de canal. Se crea el canal dentro de cada SELECT para poder utilizar UNION ALL.
 
 SELECT
@@ -72,9 +68,9 @@ SELECT
 FROM ventas
 WHERE MOD(ventas.id_venta, 2) = 0;
 
---------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------
 -- CONSOLIDADO TOTAL POR CANAL
---------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------
 
 SELECT
     canal,
