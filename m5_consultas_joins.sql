@@ -1,6 +1,6 @@
--- Base de datos: Ventas_Tech_DBB
+-- Base de datos: Ventas_Tech_DB
 
-USE Ventas_Tech_DBB;
+USE Ventas_Tech_DB;
 
 --------------------------------------------------------------------------------
 -- CONSULTA 1 - VISTA BASE DEL PROYECTO
