@@ -87,7 +87,7 @@ FROM
 
     SELECT
         ventas.cantidad * ventas.precio_unitario AS total,
-        'Origen B' AS canal
+        'Origen B' AS canal 
     FROM ventas
     WHERE MOD(ventas.id_venta, 2) = 0
 ) AS ventas_consolidadas
