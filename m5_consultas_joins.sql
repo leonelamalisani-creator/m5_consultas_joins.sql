@@ -4,6 +4,10 @@ USE Ventas_Tech_DB;
 
 --------------------------------------------------------------------------------------------------------------------
 -- CONSULTA 1 - VISTA BASE DEL PROYECTO | INNER JOIN entre ventas, clientes, productos y categorías.
+-- ============================================================
+-- CONSULTA 1 - VISTA BASE DEL PROYECTO
+-- INNER JOIN: ventas, clientes, productos y categorías
+-- ============================================================
 
 SELECT
     ventas.fecha_venta AS fecha,
@@ -24,8 +28,11 @@ INNER JOIN categorias
     ON productos.id_categoria = categorias.id_categoria
 ORDER BY ventas.fecha_venta;
 
---------------------------------------------------------------------------------------------------------------------
--- CONSULTA 2 - CLIENTES SIN VENTAS | Identifica los clientes que están registrados pero nunca realizaron una compra.
+
+-- ============================================================
+-- CONSULTA 2 - CLIENTES SIN VENTAS
+-- LEFT JOIN: clientes que nunca realizaron una compra
+-- ============================================================
 
 SELECT
     clientes.nombre,
@@ -35,8 +42,12 @@ FROM clientes
 LEFT JOIN ventas
     ON clientes.id_cliente = ventas.id_cliente
 WHERE ventas.id_venta IS NULL;
---------------------------------------------------------------------------------------------------------------------
--- CONSULTA 3 - PRODUCTOS SIN VENTAS | Identifica los productos del catálogo que no tienen ninguna venta.
+
+
+-- ============================================================
+-- CONSULTA 3 - PRODUCTOS SIN VENTAS
+-- LEFT JOIN: productos que no registran ventas
+-- ============================================================
 
 SELECT
     productos.nombre_producto AS producto,
@@ -49,46 +60,36 @@ INNER JOIN categorias
     ON productos.id_categoria = categorias.id_categoria
 WHERE ventas.id_venta IS NULL;
 
---------------------------------------------------------------------------------------------------------------------
--- CONSULTA 4 - CONSOLIDADO POR CANAL | La base no posee una columna de canal. Se crea el canal dentro de cada SELECT para poder utilizar UNION ALL.
+
+-- ============================================================
+-- CONSULTA 4 - CONSOLIDADO POR CANAL
+-- Se separan las ventas en dos períodos.
+-- Período 1: del 1 al 10 de marzo de 2024.
+-- Período 2: del 11 al 31 de marzo de 2024.
+-- ============================================================
 
 SELECT
-    ventas.fecha_venta AS fecha,
-    ventas.cantidad * ventas.precio_unitario AS total,
-    'Origen A' AS canal
-FROM ventas
-WHERE MOD(ventas.id_venta, 2) = 1
-
-UNION ALL
-
-SELECT
-    ventas.fecha_venta AS fecha,
-    ventas.cantidad * ventas.precio_unitario AS total,
-    'Origen B' AS canal
-FROM ventas
-WHERE MOD(ventas.id_venta, 2) = 0;
-
---------------------------------------------------------------------------------------------------------------------
--- CONSOLIDADO TOTAL POR CANAL
---------------------------------------------------------------------------------------------------------------------
-
-SELECT
-    canal,
-    SUM(total) AS total_facturado
+    consolidado.canal,
+    SUM(consolidado.total) AS total_canal
 FROM
 (
     SELECT
+        ventas.fecha_venta,
         ventas.cantidad * ventas.precio_unitario AS total,
-        'Origen A' AS canal
+        'Período 1' AS canal
     FROM ventas
-    WHERE MOD(ventas.id_venta, 2) = 1
+    WHERE ventas.fecha_venta >= '2024-03-01'
+      AND ventas.fecha_venta < '2024-03-11'
 
     UNION ALL
 
     SELECT
+        ventas.fecha_venta,
         ventas.cantidad * ventas.precio_unitario AS total,
-        'Origen B' AS canal 
+        'Período 2' AS canal
     FROM ventas
-    WHERE MOD(ventas.id_venta, 2) = 0
-) AS ventas_consolidadas
-GROUP BY canal;
+    WHERE ventas.fecha_venta >= '2024-03-11'
+      AND ventas.fecha_venta < '2024-04-01'
+) AS consolidado
+GROUP BY consolidado.canal
+ORDER BY consolidado.canal;
