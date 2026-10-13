@@ -3,81 +3,94 @@
 -- Base de datos: Ventas_Tech_DBB
 -- Tabla utilizada: ventas
 
-USE Ventas_Tech_DBB;
+USE Ventas_Tech_DB;
+GO
 
------------------------------------------------------------------------------------------------------------------------
+-- ============================================================
 -- CONSULTA 1 - RESUMEN EJECUTIVO MENSUAL
--- Total facturado, cantidad de pedidos y ticket promedio,
--- agrupados por mes.
+-- Total facturado, cantidad de pedidos y ticket promedio.
+-- ============================================================
 
 SELECT
-    EXTRACT (MONTH FROM fecha_venta AS) mes,
-    SUM(cantidad * precio_unitario) AS total_facturado,
+    MONTH(ventas.fecha_venta) AS mes,
+    SUM(ventas.cantidad * ventas.precio_unitario) AS total_facturado,
     COUNT(*) AS cantidad_pedidos,
-    AVG(cantidad * precio_unitario) AS ticket_promedio
+    AVG(ventas.cantidad * ventas.precio_unitario) AS ticket_promedio
 FROM ventas
-GROUP BY EXTRACT(MONTH FROM fecha_venta)
-ORDER BY mes;
+GROUP BY MONTH(ventas.fecha_venta)
+ORDER BY MONTH(ventas.fecha_venta);
 
------------------------------------------------------------------------------------------------------------------------
 
+-- ============================================================
 -- CONSULTA 2 - RANKING DE PRODUCTOS
--- Top 5 de productos por total facturado.
+-- Top 5 productos por total facturado.
+-- Muestra unidades vendidas y total generado.
+-- ============================================================
 
-SELECT
-    id_producto,
-    SUM(cantidad) AS unidades_vendidas,
-    SUM(cantidad * precio_unitario) AS total_facturado
+SELECT TOP 5
+    ventas.id_producto,
+    SUM(ventas.cantidad) AS unidades_vendidas,
+    SUM(ventas.cantidad * ventas.precio_unitario) AS total_facturado
 FROM ventas
-GROUP BY id_producto
-ORDER BY total_facturado DESC
-LIMIT 5;
+GROUP BY ventas.id_producto
+ORDER BY total_facturado DESC;
 
------------------------------------------------------------------------------------------------------------------------
+
+-- ============================================================
 -- CONSULTA 3 - CLIENTES RECURRENTES
--- Clientes que realizaron más de un pedido.
+-- Clientes con más de un pedido.
+-- Muestra cantidad de pedidos y total gastado.
+-- ============================================================
 
 SELECT
-    id_cliente,
+    ventas.id_cliente,
     COUNT(*) AS cantidad_pedidos,
-    SUM(cantidad * precio_unitario) AS total_gastado
+    SUM(ventas.cantidad * ventas.precio_unitario) AS total_gastado
 FROM ventas
-GROUP BY id_cliente
+GROUP BY ventas.id_cliente
 HAVING COUNT(*) > 1
 ORDER BY cantidad_pedidos DESC;
 
------------------------------------------------------------------------------------------------------------------------
--- CONSULTA 4 - MESES POR ENCIMA / POR DEBAJO DEL PROMEDIO
--- Compara la facturación de cada mes contra el promedio
--- de facturación mensual.
 
-WITH facturacion_mensual AS (
+-- ============================================================
+-- CONSULTA 4 - MESES POR ENCIMA O POR DEBAJO DEL PROMEDIO
+-- Compara la facturación mensual con el promedio general.
+-- ============================================================
+
+WITH totales_mensuales AS
+(
     SELECT
-        MONTH(fecha_venta) AS mes,
-        SUM(cantidad * precio_unitario) AS total_facturado
+        MONTH(ventas.fecha_venta) AS mes,
+        SUM(ventas.cantidad * ventas.precio_unitario) AS total_facturado
     FROM ventas
-    GROUP BY MONTH(fecha_venta)
+    GROUP BY MONTH(ventas.fecha_venta)
 )
-
 SELECT
-    mes,
-    total_facturado,
+    totales_mensuales.mes,
+    totales_mensuales.total_facturado,
+    AVG(totales_mensuales.total_facturado) OVER () AS promedio_mensual,
     CASE
-        WHEN total_facturado > (
-            SELECT AVG(total_facturado)
-            FROM facturacion_mensual
-        )
-        THEN 'Por encima'
-        ELSE 'Por debajo'
+        WHEN totales_mensuales.total_facturado >
+             AVG(totales_mensuales.total_facturado) OVER ()
+            THEN 'Por encima'
+        WHEN totales_mensuales.total_facturado <
+             AVG(totales_mensuales.total_facturado) OVER ()
+            THEN 'Por debajo'
+        ELSE 'Igual al promedio'
     END AS comparacion_promedio
-FROM facturacion_mensual
-ORDER BY mes;
------------------------------------------------------------------------------------------------------------------------
--- BLOQUE DE CIERRE - HALLAZGOS
------------------------------------------------------------------------------------------------------------------------
+FROM totales_mensuales
+ORDER BY totales_mensuales.mes;
 
--- 1. El producto 1 fue el que mayor facturación generó, alcanzando un total de $3600.
 
--- 2. Todos los clientes realizaron más de un pedido, por lo que todos en la base son recurrentes.
+-- ============================================================
+-- BLOQUE DE CIERRE - TRES HALLAZGOS DEL ANÁLISIS
+-- ============================================================
 
--- 3. Marzo concentró el 100% de las ventas registradas, ya que todas las operaciones de la base corresponden al mes 3.
+-- 1. El producto con id_producto 1 genera la mayor facturación,
+--    con un total de 3600.
+
+-- 2. El producto con id_producto 2 registra la mayor cantidad
+--    de unidades vendidas, con 13 unidades.
+
+-- 3. Los cinco clientes registrados en las ventas realizaron
+--    dos pedidos cada uno, por lo que todos son recurrentes.
